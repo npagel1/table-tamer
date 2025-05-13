@@ -1,0 +1,11 @@
+fastapi[all]
+uvicorn
+sqlalchemy
+databases
+pydantic
+asyncpg
+databases[postgresql]
+databases
+httpie
+psycopg2
+psycopg2-binary
