@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
-import { BackgroundImage, Box, Button, Center, em, LoadingOverlay, Modal, Stack, Text, Title } from "@mantine/core";
-import { useDisclosure, useMediaQuery, useToggle } from "@mantine/hooks";
+import { BackgroundImage, Box, Button, Center, LoadingOverlay, Modal, Stack, Text, Title } from "@mantine/core";
+import { useDisclosure, useToggle } from "@mantine/hooks";
 import { useNavigate } from "react-router";
 import { notifications } from "@mantine/notifications";
 import { useTranslation } from "react-i18next";
@@ -15,7 +15,7 @@ import { CustomerType, StaffType } from "../PageLayout";
 export default function LoginPage() {
   const { i18n } = useTranslation();
   const navigate = useNavigate();
-  const { activeUser, login } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
   const [toggleValue, toggle] = useToggle(["login", "signup"]);
   const [opened, { /* open, close */  }] = useDisclosure(true);
   const [customers, setCustomers] = useState<CustomerType[]>([]);
@@ -26,7 +26,6 @@ export default function LoginPage() {
   const [isImageLoaded, setIsImageLoaded] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const imageUrl = "/images/restaurant.jpg";
-  const isTablet = useMediaQuery(`(min-width: ${em(750)})`);
 
   useEffect(() => {
     const img = new Image();
@@ -84,11 +83,7 @@ export default function LoginPage() {
     if (password === userParam?.password_hash) {
       login(userParam);
       setLoginSuccessful(true);
-      if (userParam.hasOwnProperty("staff_role")) {
-        navigate("/admin/reservations");
-      } else {
-        navigate("/home");
-      }
+      navigate("/home");
     } else {
       setPasswordError(i18n.t("login.incorrect-password"));
     }
@@ -98,7 +93,6 @@ export default function LoginPage() {
   async function handleSignup(custInfo: CustomerType) {
     let newCustomerId: number | null = null;
 
-    // Does a POST to create the new customer
     try {
       const response = await fetch("http://127.0.0.1:8000/api/customers/", {
         method: "POST",
@@ -108,39 +102,53 @@ export default function LoginPage() {
           customer_name: custInfo.customer_name,
           email: custInfo.email,
           password_hash: custInfo.password_hash,
-          phone: custInfo.phone
-        })
+          phone: custInfo.phone,
+        }),
       });
 
       const data = await response.json();
-      newCustomerId = data.id;
 
       if (response.ok) {
         notifications.show({
           title: i18n.t("success"),
-          message: i18n.t("signup.created")
+          message: i18n.t("signup.created"),
         });
+        newCustomerId = data.id;
       } else {
-        notifications.show({
-          title: i18n.t("error"),
-          message: data.detail
-        });
+        // Handle validation errors
+        if (response.status === 422) {
+          const errorMessages = data.detail.map((err: any) => err.msg).join(", ");
+          setPasswordError(errorMessages); // Pass the error message to SignupContent
+        } else {
+          notifications.show({
+            title: i18n.t("error"),
+            message: data.detail || i18n.t("signup.error"),
+          });
+        }
+        return; // Stop further execution if there's an error
       }
+    } catch (error) {
+      console.error(error);
+      notifications.show({
+        title: i18n.t("error"),
+        message: i18n.t("signup.error"),
+      });
+    }
 
-    } catch(error) {
-      console.log(error);
-    } finally {
-      // Gets the newly created customer & logs them in
+    if (newCustomerId) {
+      // Fetch the newly created customer and log them in
       const response = await fetch("http://127.0.0.1:8000/api/customers/");
       const newCustomerList = await response.json();
-      const foundCust = newCustomerList.find((cust: CustomerType) => {
-        return cust.customer_id === newCustomerId;
-      });
+      const foundCust = newCustomerList.find(
+        (cust: CustomerType) => cust.customer_id === newCustomerId
+      );
 
       login(foundCust);
       navigate("/home");
     }
   }
+
+  console.log('%cWe could probably export the background image into its own file but it\'s not necessary', 'color:turquoise')
 
   if (showLandingPage) {
     return (
@@ -161,10 +169,9 @@ export default function LoginPage() {
               <Title
                 bd="5px solid rgb(19, 139, 236)"
                 c="white"
-                order={isTablet ? 1 : 4}
+                order={1}
                 bg="black"
                 p="md"
-                maw="90%"
                 style={{ borderRadius: "10px" }}
               >
                 {i18n.t("login.title")}  
