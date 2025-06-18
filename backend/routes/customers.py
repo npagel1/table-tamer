@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy import select
 from databases import Database
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 from typing import Optional
 from datetime import datetime
 from typing import Optional
@@ -19,6 +19,20 @@ class Customer(BaseModel):
     created_at: datetime
     customer_pic: Optional[str] = None
     language: Optional[str] = None
+
+    @validator("password_hash")
+    def validate_password(cls, value):
+        if len(value) < 8:
+            raise ValueError("Password must be at least 8 characters long.")
+        if not any(char.isdigit() for char in value):
+            raise ValueError("Password must contain at least one number.")
+        if not any(char.isupper() for char in value):
+            raise ValueError("Password must contain at least one uppercase letter.")
+        if not any(char.islower() for char in value):
+            raise ValueError("Password must contain at least one lowercase letter.")
+        if not any(char in "!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~" for char in value):
+            raise ValueError("Password must contain at least one special character.")
+        return value
 
 # Create a new customer
 @router.post("/customers/")

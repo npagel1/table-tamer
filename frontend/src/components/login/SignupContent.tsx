@@ -14,6 +14,10 @@ interface SignupContentProps {
    * Toggles the signup/login view
    */
   onToggle: () => void;
+  /**
+   * Error message for password validation
+   */
+  passwordError: string;
 }
 
 // Content used only for signing up a new customer
@@ -32,17 +36,17 @@ export default function SignupContent(props: SignupContentProps) {
       <TextInput
         label={i18n.t("credentials.name")}
         value={nameValue}
-        onChange={event => setNameValue(event.target.value)}
+        onChange={(event) => setNameValue(event.target.value)}
       />
       <TextInput
         label={i18n.t("credentials.email")}
         value={emailValue}
-        onChange={event => setEmailValue(event.target.value)}
+        onChange={(event) => setEmailValue(event.target.value)}
       />
       <TextInput
         label={i18n.t("credentials.phone")}
         value={phoneValue}
-        onChange={event => {
+        onChange={(event) => {
           if (!/^[0-9]+$/.test(event.target.value)) {
             return;
           }
@@ -52,7 +56,7 @@ export default function SignupContent(props: SignupContentProps) {
       <PasswordInput
         label={i18n.t("credentials.password")}
         value={passwordValue}
-        onChange={event => {
+        onChange={(event) => {
           setPasswordValue(event.target.value);
           if (showPassMatchError) {
             setShowPassMatchError(false);
@@ -63,7 +67,7 @@ export default function SignupContent(props: SignupContentProps) {
       <PasswordInput
         label={i18n.t("signup.confirm-password")}
         value={passwordValueConfirm}
-        onChange={event => {
+        onChange={(event) => {
           setPasswordValueConfirm(event.target.value);
           if (showPassMatchError) {
             setShowPassMatchError(false);
@@ -71,32 +75,38 @@ export default function SignupContent(props: SignupContentProps) {
         }}
         error={showPassMatchError && i18n.t("signup.must-match")}
       />
+      {props.passwordError && (
+        <Text color="red" size="sm" mt="xs">
+          {props.passwordError}
+        </Text>
+      )}
       <Button
         style={{ width: "100%" }}
-          mt="xs"
-          onClick={() => {
-            if (passwordValue !== passwordValueConfirm) {
-              setShowPassMatchError(true);
-              return;
-            }
+        mt="xs"
+        onClick={() => {
+          if (passwordValue !== passwordValueConfirm) {
+            setShowPassMatchError(true);
+            return;
+          }
 
-            // Created a date to be used as the db required "created_at" value
-            const formattedDate = dayjs(new Date()).format('YYYY-MM-DDTHH:mm:ss.SSSSSS');
-            const custInfo = {
-              customer_name: nameValue,
-              email: emailValue,
-              phone: phoneValue,
-              password_hash: passwordValue,
-              created_at: formattedDate
-            };
+          const formattedDate = dayjs(new Date()).format("YYYY-MM-DDTHH:mm:ss.SSSSSS");
+          const custInfo = {
+            customer_name: nameValue,
+            email: emailValue,
+            phone: phoneValue,
+            password_hash: passwordValue,
+            created_at: formattedDate,
+          };
 
-            props.onSignupClick(custInfo);
-          }}
-        >
-          {i18n.t("submit")}
+          props.onSignupClick(custInfo);
+        }}
+      >
+        {i18n.t("submit")}
       </Button>
       <Group gap="xs" justify="center">
-        <Text ta="center" size="sm">{i18n.t("signup.has-account")}</Text>
+        <Text ta="center" size="sm">
+          {i18n.t("signup.has-account")}
+        </Text>
         <Anchor
           component="button"
           size="sm"
